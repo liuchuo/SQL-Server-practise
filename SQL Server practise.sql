@@ -340,6 +340,189 @@ EXISTS语句比IN语句处理地快
 
 逐步用子查询建立查询时，应该从内而外地建立
 
+数据库的可伸缩性：能够适应不断增加的工作量而不失败。设计良好的数据库或应用程序称为可伸缩性好（scale well）
+
+使用联结：可以联结多个表返回一组输出，联结在运行时关系表中正确的行
+
+SELECT vend_name, prod_name, prod_price
+FROM vendors, products
+WHERE vendors.vend_id = products.vend_id
+ORDER BY vend_name, prod_name;
+
+联结：FROM语句后面跟着好几张表
+
+笛卡尔积：由没有联结条件的表关系返回的结果为笛卡尔积
+SELECT vend_name, prod_name, prod_price
+FROM vendors, products
+ORDER BY vend_name, prod_name;
+
+不要联结不必要的表，否则可能很影响性能。通过为外键列有效地创建索引可以明显地改善这种性能下降
+
+联结是SQL最重要最强大的特性，是因为关系数据库性质的要求而产生的。
+等值联结也称为内部联结。这是最经常使用的联结方式
+
+SQL允许给表名起别名，这样做主要有两个理由：
+缩短SQL语句
+允许在单条SELECT语句中多次使用相同的表
+表别名只在查询执行中使用，与列别名不一样，表别名只在查询执行中使用，不返回到客户机
+
+--自联结
+SELECT p1.prod_id, p1.prod_name
+FROM products AS p1, products AS p2
+WHERE p1.vend_id = p2.vend_id
+	AND p2.prod_id = 'DTNTR';
+
+自联结一般比子查询性能好效率快
+
+自然联结——排除多余的列出现，每个列只返回一次
+事实上，迄今为止我们建立的每一个内部联结都是自然联结，很可能我们永远都不会用到不是自然联结的内部联结
+
+--外部联结——包含了那些在相关表中没有关联行的行
+LEFT OUTER JOIN 从左边表中选择所有行
+RIGHT OUTER JOIN 从右边表中选择所有行
+SELECT customers.cust_id, orders.order_num
+FROM customers LEFT OUTER JOIN orders
+ ON customers.cust_id = orders.cust_id;
+--检索所有的客户，包括了那些没有订单的客户，左边可能会重复
+
+--简化的外部联结：
+SELECT customers.cust_id, orders.order_num
+FROM customers, orders
+WHERE customers.cust_id *= orders.cust_id;
+
+*=指示SQL Server从第一个表（customers，靠近*的表）中检索所有行，并且关联到第二个表（orders,靠近=的表）的行
+*= 左外部联结
+=* 右外部联结
+这种形式的语法不是ANSI标准的成分，在未来的SQL Server版本中并不支持它
+
+FULL OUTER JOIN
+--用来从两个表中检索相关的行，以及从每个表中检索不相关的行（这些行对另一表的非选择列具有NULL值）
+
+--使用带聚集函数的联结
+SELECT customers.cust_name,
+	   customers.cust_id,
+	   Count(orders.order_num) AS num_ord
+FROM customers INNER JOIN orders
+  ON customers.cust_id = orders.cust_id
+GROUP BY customers.cust_name,
+		 customers.cust_id;
+
+因为使用了聚集函数（Count()函数），该NULL被转换为一个数0
+
+--组合查询
+可用UNION操作符来组合数条SQL语句
+
+第一条 SELECT 检索价格不高于5的所有商品的所有行。
+第二条 SELECT 使用IN找出供应商1001和1002生产的所有物品
+SELECT vend_id, prod_id, prod_price
+FROM products
+WHERE prod_price <= 5
+UNION
+SELECT vend_id, prod_id, prod_price
+FROM products
+WHERE vend_id IN (1001, 1002);
+
+如果使用多条 WHERE 子句而不是使用 UNION 的相同查询：
+SELECT vend_id， prod_id, prod_price
+FROM products
+WHERE prod_price <= 5
+	OR vend_id IN (1001, 1002);
+
+UNION 规则：
+UNION 必须以两条或两条以上的 SELECT 语句组成，语句之间用关键字 UNION 分隔
+UNION 中的每个查询必须包含相同的列、表达式或聚集函数，而且各个列必须以相同的次序列出
+列数据类型必须兼容，类型不必完全相同，但必须是SQL Server 可以隐含地转换的类型
+
+UNION 从查询结果集中自动去除了重复的行
+如果使用 UNION ALL 那么就会保留相同的行，不取消重复的行
+UNION ALL 完成了 WHERE 字句完成不了的工作，如果确实需要每个条件的匹配行都全部出现，那么必须使用 UNION ALL 而不是 WHERE
+
+对组合查询的结果排序，只能使用一条 ORDER BY 子句，它必须出现在最后一条 SELECT 语句之后
+
+UNION 的组合查询实际上也可以应用不同的表
+使用 UNION 可极大地简化复杂的 WHERE 子句，简化从多个表中检索数据的工作
+
+--全文本搜索
+--创建全文本目录
+CREATE FULLTEXT CATALOG catalog_crashcourse;
+
+--创建全文本索引
+CREATE FULLTEXT INDEX ON productnotes(note_text)
+KEY INDEX pk_productnotes
+ON catalog_crashcourse;
+
+不要在导入数据时使用全文本索引，因为更新索引需要花时间
+先导入数据再建立索引
+
+ALTER FULLTEXT CATALOG catalog_crashcourse REBUILD;
+SELECT * FROM sys.fulltext_catalogs;
+SELECT * FROM sys.fulltext_indexes;
+
+--使用FREETEXT进行搜索
+SELECT note_id, note_text
+FROM productnotes
+WHERE FREETEXT(note_text, 'rabbit food');
+--查找可能含有rabbit food含义的任何东西（不一定要连在一起，不一定要包含）
+
+--用CONTAINS进行搜索
+SELECT note_id, note_text
+FROM productnotes
+WHERE CONTAINS(note_text, 'handsaw');
+
+CONTAINS搜索通常比LIKE更快，表越大越如此
+CONTAINS 中可以使用*通配符：CONTAINS(note_text, '"anvil*"');
+表示匹配任何以anvil开始的词
+
+支持在CONTAINS中使用AND、OR和NOT（布尔操作符）
+SELECT note_id, note_text
+FROM productnotes
+WHERE CONTAINS(note_text, 'safe AND handsaw');
+
+SELECT note_id, note_text
+FROM productnotes
+WHERE CONTAINS(note_text, 'rabbit AND NOT food');
+
+--词尾变化搜索（inflectional search）
+'FORMSOF(INFLECTIONAL, vary)' --全文本引擎查找与指定词（vary）具有相同词干的词，包括varies
+'FORMSOF(THESAURUS, vary)'--可以找出指定词的同义词（不过为了使用此功能，必须首先用词及其同义词填写一个XML辞典文件）
+
+
+--FULLTEXT搜索用FULLTEXTTABLE()函数排序
+--CONTAINS搜索用CONTAINSTABLE()函数排序
+SELECT f.rank, note_id, note_text
+FROM productnotes,
+	 FREETEXTTABLE(productnotes, note_text, 'rabbit food') f
+WHERE productnotes.note_id = f.[key]
+ORDER BY rank DESC;
+
+rank列显示匹配的等级值。等级值越高越匹配
+还可以用ISABLOUT()函数给特定的词赋予权重值。然后，全文本搜索引擎会在决定等级时使用这些权重值
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
