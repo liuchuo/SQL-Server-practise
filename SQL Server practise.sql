@@ -544,6 +544,83 @@ FROM customers;
 可以把 INSERT SELECT 视为一个导入操作，而把 SELECT INTO 视为一个导出操作
 
 
+--更新数据
+UPDATE customers
+SET cust_email = 'elmer@fudd.com',
+	cust_name = 'The Fudds'
+WHERE cust_id = 10005;
+
+
+--为了删除某个列的值，可以设置它为NULL
+UPDATE customers
+SET cust_email = NULL
+WHERE cust_id = 10005;
+
+--删除一行数据
+DELETE FROM customers
+WHERE cust_id = 10006;
+
+DELETE 不需要列名或通配符。 DELETE 删除整行而不是删除列 为了删除列 可用 UPADTE语句
+DELETE 只删除行 甚至可以删除所有行，但是不删除表本身
+
+SQL Server没有撤销按钮，所以应该小心地使用 UPDATE 和 DELETE
+WHERE 子句非常重要
+
+CREATE TABLE 用来创建新表
+ALTER TABLE 用来更改表列
+DROP TABLE 用来完整的删除一个表
+
+CREATE TABLE orders
+(
+	order_num INT NOT NULL IDENTITY(1, 1),
+	order_date DATETIME NOT NULL,
+	cust_id INT NOT NULL,
+	PRIMARY KEY (order_num, cust_id)
+);
+
+IDENTITY(1, 1) --从1开始，每次生成编号的增量为1
+每个表只允许一个IDENTITY列，而且identity列一般用作主键 
+
+@@IDENTITY 可获得当前最后生成的IDENTITY值
+
+在 CREATE 时候在列属性末尾加 DEFAULT 1 可指定默认值 1
+也可以
+DEFAULT GetDate()   --GetDate()返回的是当前系统的日期和时间
+
+
+--更改表的结构
+ALTER TABLE vendors
+ADD vend_phone CHAR(20);
+--给表增加一个属性列
+
+ALTER TABLE vendors
+DROP COLUMN vend_phone;
+--删除表的一个属性列
+
+--ALTER TABLE 最常见的用途是定义外键
+ALTER TABLE orderitems
+ADD CONSTRAINT fk_orderitems_orders FOREIGN KEY (order_num)
+REFERENCES orders (order_num);
+
+DROP TABLE customers2;
+--删除表
+
+--重命名表
+EXEC sp_rename 'customers2', 'customers';
+使用sp_rename可用来重命名各种对象，包括表
+
+
+视图可以嵌套，可以利用其他视图从检索数据的查询来构造一个视图
+ORDER BY 不可以用在视图中，但是可以用在视图中检索数据的 SELECT 语句里
+视图不能索引，也不能有关联的触发器和默认值
+视图可以和表一起使用。例如，编写一条联结表和视图的 SELECT 语句
+
+CREATE VIEW productcustomers AS
+SELECT cust_name, cust_contact, prod_id
+FROM customers, orders, orderitems
+WHERE customers.cust_id = orders.cust_id
+	AND orderitems.order_num = orders.order_num;
+
 
 
 
