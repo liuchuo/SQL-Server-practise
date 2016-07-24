@@ -498,6 +498,51 @@ ORDER BY rank DESC;
 rank列显示匹配的等级值。等级值越高越匹配
 还可以用ISABLOUT()函数给特定的词赋予权重值。然后，全文本搜索引擎会在决定等级时使用这些权重值
 
+--INSERT
+--插入完整的行
+INSERT INTO customers
+VALUES(10006,
+	'myname',
+	'CS',
+	NULL,
+	NULL);
+
+INSERT INTO customers(cust_name,
+	cust_address,
+	cust_city,
+	cust_email)
+VALUES('PEabbd',
+	'100 Main Street',
+	'Los Angeles',
+	NULL);
+
+可以省略某些列，前提是该列允许NULL值，或者该表定义中给出默认值
+
+INTO 关键字是可选的
+
+SQL Server的单条INSERT语句不支持多个VALUES子句，一次只能插入一行值
+
+插入检索出的数据：
+INSERT INTO customers(cust_contact,
+	cust_email,
+	cust_name,
+	cust_zip)
+SELECT a_contact,
+	a_email,
+	a_name,
+	a_zip
+FROM custnew;
+
+
+SELECT cust_contact,
+	cust_email,
+	cust_name,
+	cust_zip
+INTO customersExport
+FROM customers;
+
+可以把 INSERT SELECT 视为一个导入操作，而把 SELECT INTO 视为一个导出操作
+
 
 
 
