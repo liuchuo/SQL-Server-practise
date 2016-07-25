@@ -615,14 +615,35 @@ ORDER BY 不可以用在视图中，但是可以用在视图中检索数据的 S
 视图不能索引，也不能有关联的触发器和默认值
 视图可以和表一起使用。例如，编写一条联结表和视图的 SELECT 语句
 
+--用视图联结多个表
 CREATE VIEW productcustomers AS
 SELECT cust_name, cust_contact, prod_id
 FROM customers, orders, orderitems
 WHERE customers.cust_id = orders.cust_id
 	AND orderitems.order_num = orders.order_num;
 
+--用视图重新格式化检索出的数据
+CREATE VIEW vendorlocations AS
+SELECT RTrim(vend_name) + '(' + RTrim(vend_country) + ')'
+	AS vend_title
+FROM vendors;
 
+--使用视图与计算字段
+CREATE VIEW orderitemsexpanded AS
+SELECT order_num,
+	prod_id,
+	quantity * item_price AS expanded_price
+FROM orderitems;
 
+--查看视图
+SELECT *
+FROM orderitemsexpanded
+WHERE order_num = 20005;
+
+视图是可更新的，更改视图将更新其基本表。
+如果视图定义中有以下操作，则不能进行视图更新：
+多个基本表、分组（GROUP BY 和 HAVING）、联结、子查询、并、聚集函数（Min() Count() Sum()）
+DISTINCT 、导出（计算）列
 
 
 
