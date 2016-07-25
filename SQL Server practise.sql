@@ -1,6 +1,6 @@
 --使用数据库
 USE crashcourse;
---返回
+--返回：
 Command(s) completed successfully
 
 --显示所有数据库的列表
@@ -151,13 +151,13 @@ SELECT GetDate(); --GetDate()函数返回当前日期和时间
 
 --第10章 使用数据处理函数
 RTrim()去除字符串右边空格
---函数的可移植性没有SQL的可移植性高，几乎每个主要的DBMS都会支持其他DBMS不支持的函数
---如果决定使用函数，应该保证做好代码注释，以便以后你或者其他人能够确切地知道所编写SQL代码的含义
+函数的可移植性没有SQL的可移植性高，几乎每个主要的DBMS都会支持其他DBMS不支持的函数
+如果决定使用函数，应该保证做好代码注释，以便以后你或者其他人能够确切地知道所编写SQL代码的含义
 --SQL支持以下类型的函数：
---用于处理字符串（如删除或填充值，转换为大写或小写）的文本函数
---用于在数值数据上进行算术操作（如返回绝对值，进行代数运算）的数值函数
---用于处理日期和时间值并从这些值中提取特定成分（例如，返回两个日期之差，检查日期有效性）的日期和时间函数
---返回DBMS正使用的特殊信息（如返回用户登录信息，检查版本信息）的系统函数
+用于处理字符串（如删除或填充值，转换为大写或小写）的文本函数
+用于在数值数据上进行算术操作（如返回绝对值，进行代数运算）的数值函数
+用于处理日期和时间值并从这些值中提取特定成分（例如，返回两个日期之差，检查日期有效性）的日期和时间函数
+返回DBMS正使用的特殊信息（如返回用户登录信息，检查版本信息）的系统函数
 
 --Upper()函数
 SELECT vend_name, Upper(vend_name) AS vend_name_upcase FROM vendors
@@ -823,12 +823,106 @@ BEGIN
 	WHERE vend_id IN (SELECT VEND_ID FROM INSERTED)
 END;
 
+--事务处理
+事务：一组SQL语句
+回退：撤销指定SQL语句的过程
+提交：将为存储的SQL语句结果写入数据库表
+保留点：事务处理中设置的临时占位符，可以对它发布回退（与回退整个事务处理不同）
 
+事务处理用来管理 INSERT 、 UPDATE 和 DELETE
+不能回退 SELECT CREATE 和 DROP 操作
 
+事务处理块中，提交不会隐含地进行，需要明确的提交，使用COMMIT语句
+BEGIN TRANSACTION;
+DELETE FROM orderitems WHERE order_num = 20010;
+DELETE FROM orders WHERE order_num = 20010;
+COMMIT;
 
+--使用保留点
+SAVE TRANSACTION delete1;
+--退回到保留点
+ROLLBACK TRANSACTION delete1;
+--退回到事务的开始
+ROLLBACK TRANSACTION;
 
+保留点越多越好
 
+--更改自动提交行为，使SQL Server不自动提交更改
+SET IMPLICIT_TRANSACTIONS ON;
 
+XML已经成了一个标准的机制，可通过它交换、分发和持久化存储数据
+
+--FOR XML 指示SQL Server生成 XML 输出
+SELECT vend_id, RTrim(vend_name) AS vend_name
+FROM vendors
+ORDER BY vend_name
+FOR XML AUTO;
+
+--SQL Server中提供了XML这种数据类型 可用来存储合式的XML
+XQuery 是一种用于XML的查询语言：SQL用于关系数据库，而XQuery用于XML数据
+
+--使用Cast()函数把每个串转换为XML
+Cast('<state abbrev = "NY">
+	<city name = "New York" />
+	</state>' AS XML);
+
+字符集：字母和符号的集合。
+编码：某个字符集成员的内部表示。
+校对：规定字符如何比较的指令。
+
+--返回所有可用的校对顺序列表
+SELECT * FROM fn_helpcollations();
+--查看默认的校对程序
+SELECT ServerProperty('Collation') AS Collation;
+
+指定校对顺序
+SELECT * FROM customers
+ORDER BY cust_name COLLATE SQL_Latin1_General_CP1_CS_AS;
+
+SELECT cust_id, cust_name
+FROM customers
+WHERE cust_name COLLATE SQL_Latin1_General_CP1_CS_AS LIKE '%E%';
+
+COLLATE还可以用作GROUP BY 、 HAVING 、聚集函数、 别名
+
+VALUES(1000, N'≈ÇÍ∑')
+在前面加N作为串的前缀，告诉SQL Server把后跟的文本视为Unicode对待
+
+sa(System Administrator)对整个SQL Server具有完全的控制
+在现实世界的日常工作中，决不能使用sa。应该创建一系列帐号，有的用于管理，有的供用户使用，有的供开发人员使用等等
+
+--返回所有登录信息
+EXEC sp_helplogins;
+
+--创建用户帐号
+CREATE LOGIN BenF WITH PASSWORD = "888888";
+
+--删除用户帐号
+DROP LOGIN BenF;
+
+--禁用和启用帐号
+ALTER LOGIN BenF DISABLE;
+ALTER LOGIN BenF ENABLE;
+
+--重命名登录：
+ALTER LOGIN BenF WITH NAME = BenForta;
+
+--更改口令
+ALTER LOGIN BenF WITH PASSWORD = '000000';
+
+--设置访问权限
+GRANT CREATE TABLE TO BenF;
+在末尾加 WITH GRANT OPTION 表示允许用户把相同的访问权限授予别的用户
+--删除访问权限
+REVOKE CREATE TABLE FROM BenF;
+
+--改善性能
+使用Windows Systems Monitor见识SQL Server的磁盘以及内屏使用、关键事件的更改等
+存储过程执行比一条一条地执行其中的各条SQL Server语句快
+绝对不要检索比需求还要多的数据 不要用SELECT * 除非你真的需要每一列
+如果SELECT中有一系列复杂的OR，创始改变成多条SELECT语句和连接它们的UNION语句
+索引改善数据检索的性能，但是损害数据插入、删除和更新的性能。如果你又一些表，它们收集数据但是不经常用作搜索，就没必要索引它们
+LIKE很慢。一般来说最好用FREETEXT或者CONTAINS进行全文本搜索
 
 
 
