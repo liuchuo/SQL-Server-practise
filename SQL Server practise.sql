@@ -645,8 +645,101 @@ WHERE order_num = 20005;
 多个基本表、分组（GROUP BY 和 HAVING）、联结、子查询、并、聚集函数（Min() Count() Sum()）
 DISTINCT 、导出（计算）列
 
+--T-SQL程序设计
+变量名以@开始，局部变量@为前缀，全局变量以@@为前缀
+变量使用 DECLARE 声明它们
+声明一个变量时必须指定它的数据类型
+变量在被声明后直到处理完成前都会一直存在
+DECLARE @age INT;
+DECLARE @firstName CHAR(20), @lastName CHAR(20);
+
+变量刚声明的时候为 NULL
+用 SET 给变量赋值
+SET @lastName = 'Forta';
+SET @firstName = 'Ben';
+SET @age = 21;
+
+也可以： SELECT @age = 21;
+SET 只设置单个变量，赋值多个变量要用多条 SET 语句
+SELECT 可用来在单条语句中给多个变量赋值
+
+--查看变量的值
+SELECT @lastName, @firstName, @age
+也可以用print语句
+PRINT @lastName + ', ' + @firstName;
+PRINT @age;
+
+PRINT 'Age: ' + Convert(CHAR, @age);
+
+使用定义变量的方法把 10005 转换为变量的名称，然后在用到 10005 的地方用变量名代替以防出错
+
+在给串变量赋值时需要使用单引号，但是实际使用变量时不应该使用单引号
 
 
+--使用条件语句
+DECLARE @open BIT
+IF DatePart(dw, GetDate()) = 1
+	SET @open = 0
+ELSE
+	SET @open = 1
+
+--如果使用多条if或者else语句
+IF @dow = 1 OR @dow = 7
+	BEGIN
+		SET @open = 0
+		SET @process = 0
+	END
+ELSE
+	BEGIN
+		SET @open = 0
+		SET @process = 0
+	END
+
+--while语句
+WHILE @counter <= 10
+BEGIN
+	PRINT @counter
+	SET @counter = @counter + 1
+END
+
+while语句中也可以使用 BREAK 和 CONTINUE
+
+--执行存储过程
+EXECUTE productpricing @cheap OUTPUT,
+					   @expensive OUTPUT,
+					   @average OUTPUT
+--创建存储过程
+CREATE PROCEDURE productpricing 
+	@price_min MONEY OUTPUT
+	@PRICE_max MONEY OUTPUT
+	@price_avg MONEY OUTPUT
+AS
+BEGIN
+	SELECT @price_min = Min(prod_price)
+	FROM products;
+	SELECT @price_max = Max(prod_price)
+	FROM products;
+	SELECT @price_avg = Avg(prod_price)
+	FROM products;
+END;
+
+--删除
+DROP PROCEDURE productpricing;
+
+--执行（不返回任何数据）
+DECLARE @cheap MONEY
+DECLARE @expensive MONEY
+DECLARE @AVERAGE MONEY
+EXECUTE productpricing @cheap OUTPUT,
+					   @expensive OUTPUT,
+					   @average OUTPUT
+
+--显示
+SELECT @cheap;
+
+SELECT @cheap, @expensive, @average;
+
+OUTPUT 表示从存储过程中返回计算的值到变量，这个过程并不会输出，要查看变量的值要用SELECT语句
 
 
 
