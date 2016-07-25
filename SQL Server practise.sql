@@ -935,8 +935,3 @@ LIKE很慢。一般来说最好用FREETEXT或者CONTAINS进行全文本搜索
 
 
 
-
-
-
-
-
