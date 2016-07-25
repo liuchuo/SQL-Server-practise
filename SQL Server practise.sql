@@ -741,13 +741,87 @@ SELECT @cheap, @expensive, @average;
 
 OUTPUT 表示从存储过程中返回计算的值到变量，这个过程并不会输出，要查看变量的值要用SELECT语句
 
+所有存储过程基本上都是封装简单的T-SQL语句
 
 
+--游标
+游标是一个存储在SQL Server上的数据库查询，它不是一条 SELECT 语句，而是被该语句检索出来的结果集
+在存储了游标之后，应用程序可以根据需要滚动或浏览其中的数据
 
+--创建游标
+DECLARE orders_cursor CURSOR
+FOR
+SELECT order_num FROM orders ORDER BY order_num;
 
+--删除游标
+DEALLOCATE orders_cursor;
 
+--打开关闭游标
+OPEN orders_cursor;
+CLOSE orders_cursor;
 
+声明游标后可以多次打开和关闭，打开游标后可多次使用它直到它被关闭
 
+--使用游标数据
+FETCH NEXT FROM orders_cursor INTO @order_num;
+--FETCH
+FETCH NEXT --取下一行
+FETCH PRIOR --检索前一行
+FETCH FIRST --检索第一行
+FETCH LAST --检索最后一行
+FETCH ABSOLUTE --取从顶端开始的特定行数的行
+FETCH RELATIVE --取从当前行开始的特定行数的行
+
+@@FETCH_STATUS --获得fetch的状态码。如果fetch成功返回0，否则返回一个负值
+
+--使用触发器
+触发器就是SQL Server响应 DELETE、INSERT、UPDATE 中的任何语句而自动执行的T-SQL语句
+表和视图支持触发器，但临时表不支持
+
+CREATE TRIGGER newproduct_trigger ON products
+AFTER INSERT
+AS
+SELECT 'Product added';
+
+每个表每个事件每次只允许一个触发器，因此每个表最多支持3个触发器（INSERT、UPDATE、DELETE各一个触发器）
+
+单个触发器可以与多个事件关联
+AFTER INSERT, UPDATE
+
+--删除触发器
+DROP TRIGGER newproduct_trigger;
+
+--禁用和重新启用触发器
+DISABLE TRIGGER newproduct_trigger ON products;
+ENABLE TRIGGER newproduct_trigger ON products;
+
+--确定触发器的任务 --返回响应表明所拥有的触发器的列表
+SP_HELPTRIGGER products;
+
+--INSERT触发器 访问被插入的行
+CREATE TRIGGER neworder_trigger ON orders
+AFTER INSERT
+AS
+SELECT @@IDENTITY AS order_num;
+
+--DELETE触发器 访问被删除的行
+CREATE TRIGGER deleteorder_trigger ON orders
+AFTER DELETE
+AS
+BEGIN
+	INSERT INTO orders_achive(order_num, order_date, cust_id)
+	SELECT order_num, order_date, cust_id FROM DELETED;
+END;
+
+--UPDATE触发器 --引用名为DELETED的虚拟表访问以前的值，引用名为INSERTED的虚拟表访问新更新的值
+CREATE TRIGGER vendor_trigger ON vendors
+AFTER INSERT, UPDATE
+AS
+BEGIN
+	UPDATE vendors
+	SET vend_state = Upper(vend_state)
+	WHERE vend_id IN (SELECT VEND_ID FROM INSERTED)
+END;
 
 
 
