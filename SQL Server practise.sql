@@ -251,7 +251,7 @@ WHERE vend_id = 1003;
 Count(cust_email) AS num_cust
 FROM customers;
 --选取具有电子邮件的客户计数,计数值在以num_cust命名的列中返回
---如果指定列名，则指定列的值为空的行被Count()函数忽略，但是如果Count()函数中用的星号(*),则不忽略
+如果指定列名，则指定列的值为空的行被Count()函数忽略，但是如果Count()函数中用的星号(*),则不忽略
 
 --Max()函数  --返回指定列中的最大值
 Max()函数忽略列值为NULL的行
@@ -286,7 +286,7 @@ GROUP BY vend_id;
 --如果分组列中具有NULL值，则NULL将作为一个分组返回。如果列中有多个NULL值，他们将分为一组
 
 --过滤分组
---WHERE 过滤指定的行而不是分组。
+WHERE 过滤指定的行而不是分组。
 HAVING 支持所有WHERE操作符
 在指定的GROUP BY子句中用HAVING代替其中的WHERE，其效果是一样的
 
@@ -560,7 +560,16 @@ WHERE cust_id = 10005;
 DELETE FROM customers
 WHERE cust_id = 10006;
 
-DELETE 不需要列名或通配符。 DELETE 删除整行而不是删除列 为了删除列 可用 UPADTE语句
+DELETE 不需要列名或通配符。 DELETE 删除整行而不是删除列 
+
+为了删除列：
+ALTER TABLE vendors
+DROP COLUMN vend_phone;
+--删除表的一个属性列
+UPDATE TABLE vendors
+SET vend_phone = NULL
+--把某个属性列的值都变为NULL
+
 DELETE 只删除行 甚至可以删除所有行，但是不删除表本身
 
 SQL Server没有撤销按钮，所以应该小心地使用 UPDATE 和 DELETE
@@ -671,7 +680,7 @@ PRINT @age;
 
 PRINT 'Age: ' + Convert(CHAR, @age);
 
-使用定义变量的方法把 10005 转换为变量的名称，然后在用到 10005 的地方用变量名代替以防出错
+使用定义变量的方法把 10005 转换为变量 @num 的名称，然后在用到 10005 的地方用变量名 @num 代替以防出错
 
 在给串变量赋值时需要使用单引号，但是实际使用变量时不应该使用单引号
 
@@ -845,7 +854,7 @@ ROLLBACK TRANSACTION delete1;
 --退回到事务的开始
 ROLLBACK TRANSACTION;
 
-保留点越多越好
+保留点越多越好。越能让我们随时回滚到想要回到的位置。
 
 --更改自动提交行为，使SQL Server不自动提交更改
 SET IMPLICIT_TRANSACTIONS ON;
@@ -883,10 +892,10 @@ SELECT cust_id, cust_name
 FROM customers
 WHERE cust_name COLLATE SQL_Latin1_General_CP1_CS_AS LIKE '%E%';
 
-COLLATE还可以用作GROUP BY 、 HAVING 、聚集函数、 别名
+COLLATE还可以用作 GROUP BY、HAVING、聚集函数、别名
 
 VALUES(1000, N'≈ÇÍ∑')
-在前面加N作为串的前缀，告诉SQL Server把后跟的文本视为Unicode对待
+在前面加'N'作为串的前缀，告诉SQL Server把后跟的文本视为Unicode对待
 
 sa(System Administrator)对整个SQL Server具有完全的控制
 在现实世界的日常工作中，决不能使用sa。应该创建一系列帐号，有的用于管理，有的供用户使用，有的供开发人员使用等等
